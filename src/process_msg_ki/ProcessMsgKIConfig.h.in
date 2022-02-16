@@ -1,0 +1,6 @@
+#ifndef CONFIG_H_IN
+#define CONFIG_H_IN
+
+#define NAMEOFPROJECT "@NAMEOFPROJECT@"
+
+#endif // CONFIG_H_IN
