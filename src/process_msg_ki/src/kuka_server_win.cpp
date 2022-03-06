@@ -20,9 +20,10 @@
 // Link with ws2_32.lib
 #pragma comment(lib, "ws2_32.lib")  //Winsock Library
 
-#define PORT     65432  // The port on which to listen for incoming data (non-privileged ports are > 1023)
+#define PORT     49152  // The port on which to listen for incoming data (non-privileged ports are > 1023)
 #define BUFLEN   4096  // Max length of buffer
 #define HOST     "0.0.0.0"  // ip address for external connection
+#define LOCALHOST "127.0.0.1"  // the local host via the loopback device
 
 using namespace xercesc;
 using namespace boost::interprocess;
@@ -41,6 +42,13 @@ using namespace boost::interprocess;
  *     http://www.yolinux.com/TUTORIALS/XML-Xerces-C.html
  */
 
+/*
+ * \brief Processing message from robot which is stored in shared memory
+ *
+ * \param argc An integer argument count of the command line arguments
+ * \param argv An argument vector of the command line arguments
+ * \return Status of the main program
+ */
 int main(int argc, char *argv[]) {
     // declare var param to be then filled with the given value in command line for running the node
     std::string param;
@@ -75,17 +83,24 @@ int main(int argc, char *argv[]) {
     printf("Initialised.\n");
 
     //Create a socket
-    if((s = socket(AF_INET , SOCK_DGRAM , 0 )) == INVALID_SOCKET)
+    if((s = socket(AF_INET , SOCK_DGRAM , IPPROTO_UDP )) == INVALID_SOCKET)
     {
         printf("Could not create socket : %d" , WSAGetLastError());
     }
     printf("Socket created.\n");
 
-    // Prepare the sockaddr_in structure of server
     // https://stackoverflow.com/questions/16508685/understanding-inaddr-any-for-socket-programming for reference
-    server.sin_family = AF_INET;  // IPv4
-    //server.sin_addr.s_addr = inet_addr(HOST);  // an alternative to set s_addr for external connection
+    /*
+     * Prepare the sockaddr_in structure: (Note: Except for the sin*_family parameter, sockaddr contents are expressed
+     * in network byte order.)
+     * - specify the IPv4 address family
+     * - assign INADDR_ANY or "0.0.0.0" (network byte order) to s_addr to then bind the socket to all available interfaces
+     * - assign a specific port number (network byte order) to sin_port
+     */
+    server.sin_family = AF_INET;
+    //server.sin_addr.s_addr = inet_addr(HOST);  // an alternative way of defining s_addr for external connection
     server.sin_addr.s_addr = htonl(INADDR_ANY);
+    //server.sin_addr.s_addr = inet_addr(LOCALHOST);  // way of defining s_addr for internal connection (localhost)
     server.sin_port = htons(PORT);
 
     // Bind the socket with the server address
@@ -106,22 +121,10 @@ int main(int argc, char *argv[]) {
     //Map the whole shared memory in this process
     mapped_region region(shm, read_write);
 
-    //keep listening for incoming data from robot and operating on them
-    // TODO to check the validity of while(true) for running ROS node, if not use while (ros::ok())
+    //keep listening for incoming data from robot and operating on them until robot stops sending msg or server itself
+    // explicitly terminates
     while(true)
     {
-        // Task 1: Write message to the shared memory
-        // copy buf to mapped region of this process
-        /*
-         * When a C++ class instance placed in a mapped region has a pointer pointing to another object also placed in
-         * the mapped region, since the pointer stores an absolute address, offset pointer should be used. But it is not
-         * necessary in this case, since buf is a char array.
-         */
-        std::memcpy(region.get_address(), buf, strlen(buf));
-
-
-        // Task 2: Extract IPOC and current actual position and then send them back
-        // TODO to include the control signal
         printf("Server waiting for data...");
         fflush(stdout);
 
@@ -134,12 +137,24 @@ int main(int argc, char *argv[]) {
             printf("recvfrom() failed with error code : %d" , WSAGetLastError());
             exit(EXIT_FAILURE);
         }
-
         //print out details of the client_ip_address/port and the data received
         //set the after-tailor element of buf as null
         buf[recv_len] = '\0';
         printf("Received packet from %s:%d\n", inet_ntoa(si_other.sin_addr), ntohs(si_other.sin_port));
         printf("Server receives:\n%s\n\n" , buf);
+
+        // Task 1: Write message to the shared memory
+        // copy buf to mapped region of this process
+        /*
+         * When a C++ class instance placed in a mapped region has a pointer pointing to another object also placed in
+         * the mapped region, since the pointer stores an absolute address, offset pointer should be used. But it is not
+         * necessary in this case, since buf is a char array.
+         */
+        std::memcpy(region.get_address(), buf, strlen(buf));
+
+
+        // Task 2: Extract IPOC and current actual position and then send them back
+        // TODO to include the control signal
 
         // Parse buf (char array of xml config) using Xerces-C++ XML Parser
         // record initial time for parsing
@@ -187,11 +202,6 @@ int main(int argc, char *argv[]) {
         // are nanoseconds, microseconds, milliseconds,
         // seconds, minutes, hours.
         auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
-        /*
-         * synchronization mechanisms: https://www.boost.org/doc/libs/1_78_0/doc/html/interprocess/synchronization_mechanisms.html
-         * synchronization objects: mutex, condition variables, semaphores and file locks
-         * difference among first three: https://stackoverflow.com/questions/3513045/conditional-variable-vs-semaphore
-        */
         std::cout << "Time taken from server receiving msg to sending response: "
              << duration.count() << " milliseconds" << std::endl;
     }
