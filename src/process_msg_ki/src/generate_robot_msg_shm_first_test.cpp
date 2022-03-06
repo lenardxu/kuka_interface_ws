@@ -40,6 +40,13 @@ std::string readFileToString(const std::string& path) {
  */
 
 // TODO To figure out how to deal with mapped_region constructor w.r.t. mapping offset and address limitations and smart pointers
+/*
+ * \brief Processing message from robot which is stored in shared memory
+ *
+ * \param argc An integer argument count of the command line arguments
+ * \param argv An argument vector of the command line arguments
+ * \return Status of the main program
+ */
 int main(int argc, char *argv[])
 {
     using namespace boost::interprocess;
@@ -75,7 +82,7 @@ int main(int argc, char *argv[])
     //Create a native windows shared memory object.
     windows_shared_memory shm (create_only, "FirstSharedMemory", read_write, 4096);
 
-    //Map the whole shared memory in this process
+    //Map the whole shared memory in this process's address space by creating a mapped_region object
     mapped_region region(shm, read_write);
 
     ros::Rate loop_rate(1);
