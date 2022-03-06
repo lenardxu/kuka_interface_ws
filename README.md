@@ -73,6 +73,8 @@ this project is **Visual Studio** since the dependencies - Boost and Xerces C++ 
 - Open another new terminal, and command `rostopic list` to find the running `topic` specified by you in code, and then 
 command `rostopic echo <your_topic>`
 
+Note: template command line for running ros node: `rosrun package node_name _param:=...`
+
 ## Q&A
 > Why can't the compiler like Visual studio or gcc and c++ managed by MinGW find the "sys/socket.h" and other related 
 > header files?
