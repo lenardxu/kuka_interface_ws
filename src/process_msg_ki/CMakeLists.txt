@@ -162,8 +162,8 @@ include_directories(
 
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
-## The recommended prefix ensures that target names across packages don't collide
-# add_executable(${PROJECT_NAME}_node src/process_msg_ki_node.cpp)
+# The following activated block (only for testing) serves for generating dummy robot msg and storing it into the shared
+# memory so that process_robot_msg_node can access and operate on it
 add_executable( generate_robot_msg_test
         src/generate_robot_msg_shm_first_test.cpp )
 target_include_directories( generate_robot_msg_test
@@ -171,19 +171,45 @@ target_include_directories( generate_robot_msg_test
 target_link_libraries( generate_robot_msg_test
         ${Boost_LIBRARIES} ${catkin_LIBRARIES} )
 
+# The following commented block serves for udp server implementation with parsing xml msg using xerces-c++ library
+# This way of parsing xml msg can be remained in case the msg gets more complex
+#add_executable( kuka_interface_server_node
+#        src/kuka_server_win.cpp src/parser.cpp )
+#target_include_directories( kuka_interface_server_node
+#        PRIVATE ${Boost_INCLUDE_DIRS} ${XercesC_INCLUDE_DIR} )
+#target_link_libraries( kuka_interface_server_node
+#        ${Boost_LIBRARIES} ${XercesC_LIBRARY} ${catkin_LIBRARIES} )
+# The following activated block serves for udp server implementation with parsing xml msg using regex library (STL)
 add_executable( kuka_interface_server_node
-        src/kuka_server_win.cpp src/parser.cpp )
+        src/kuka_server_real_time.cpp )
 target_include_directories( kuka_interface_server_node
-        PRIVATE ${Boost_INCLUDE_DIRS} ${XercesC_INCLUDE_DIR} )
+        PRIVATE ${Boost_INCLUDE_DIRS} )
 target_link_libraries( kuka_interface_server_node
-        ${Boost_LIBRARIES} ${XercesC_LIBRARY} ${catkin_LIBRARIES} )
+        ${Boost_LIBRARIES} ${catkin_LIBRARIES} )
 
+# The following activated block serves for processing the robot msg in shared memory and then publishing it
 add_executable( process_robot_msg_node
-        src/process_robot_msg_shm_first.cpp src/parser.cpp )
+        src/process_robot_msg_shm_first.cpp )
 target_include_directories( process_robot_msg_node
-        PRIVATE ${Boost_INCLUDE_DIRS} ${XercesC_INCLUDE_DIR} )
+        PRIVATE ${Boost_INCLUDE_DIRS} )
 target_link_libraries( process_robot_msg_node
-        ${Boost_LIBRARIES} ${XercesC_LIBRARY} ${catkin_LIBRARIES} )
+        ${Boost_LIBRARIES} ${catkin_LIBRARIES} )
+
+# The following activated block serves for subscribing to the ros msg over r_ist topic and then publishing dummy control signal
+add_executable( controller_node
+        src/dummy_controller.cpp )
+#target_include_directories( controller_node
+#        PRIVATE ${Boost_INCLUDE_DIRS} )
+target_link_libraries( controller_node ${catkin_LIBRARIES} )
+
+# The following activated block serves for subscribing to the robot msg over control_signal topic and then saving it to shm
+add_executable( subscribe_ctrl_signal_node
+        src/subscribe_ctrl_signal_shm_second.cpp )
+target_include_directories( subscribe_ctrl_signal_node
+        PRIVATE ${Boost_INCLUDE_DIRS} )
+target_link_libraries( subscribe_ctrl_signal_node
+        ${Boost_LIBRARIES} ${catkin_LIBRARIES} )
+
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -219,7 +245,7 @@ target_link_libraries( process_robot_msg_node
 # install(TARGETS ${PROJECT_NAME}_node
 #   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 # )
-install( TARGETS generate_robot_msg_test kuka_interface_server_node process_robot_msg_node
+install( TARGETS generate_robot_msg_test kuka_interface_server_node process_robot_msg_node controller_node subscribe_ctrl_signal_node
          RUNTIME DESTINATION lib/${PROJECT_NAME} )
 
 ## Mark libraries for installation
