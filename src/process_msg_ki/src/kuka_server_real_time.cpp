@@ -207,17 +207,17 @@ int main(int argc, char *argv[]) {
     puts("Bind done");
 
 
-    //No need to explicitly remove the share memory segments due to use of native windows shared memory mechanism
-    //Create a native windows shared memory object.
+    // Create a native windows shared memory object.
+    //Note: No need to explicitly remove the share memory segments due to use of native windows shared memory mechanism
     windows_shared_memory shm (create_only, "FirstSharedMemory", read_write, 4096);
     // managed_shared_memory managed_shm{open_or_create, "shm", 1024};
 
-    //Map the whole shared memory in this process
+    // Map the whole shared memory in this process
     mapped_region region(shm, read_write);
 
 
-    //keep listening for incoming data from robot and operating on them until robot stops sending msg or server itself
-    // explicitly terminates
+    // Keep listening for incoming data from robot and operating on them until robot stops sending msg or server itself
+    // explicitly terminates. In addition, since this node subscribes to nothing, there is no need to apply spinning.
     while(true)
     {
         printf("Waiting for data...");
