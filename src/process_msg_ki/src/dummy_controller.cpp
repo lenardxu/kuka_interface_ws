@@ -26,19 +26,22 @@ class ControlNode
         ROS_INFO("Received position: X=%.2f, Y=%.2f, Z=%.2f; orientation quaternion: x=%.2f, y=%.2f, z=%.2f, w=%.2f",
                  ps3d->pose.position.x, ps3d->pose.position.y, ps3d->pose.position.z,
                  ps3d->pose.orientation.x, ps3d->pose.orientation.y, ps3d->pose.orientation.z, ps3d->pose.orientation.w);
+        // assign dummy values to the corrected positions
         output_msg.pose.position.x = 0.001;
-        output_msg.pose.position.y = 0.001;
-        output_msg.pose.position.z = 0.001;
+        output_msg.pose.position.y = 0.002;
+        output_msg.pose.position.z = 0.003;
         delta_positions_pub.publish(output_msg);
     }
 
 public:
     // default constructor
     ControlNode(){
+        // TODO to set the queue size reasonably
         // let the node subscribe the ros msg - 3d pose - over topic "r_ist"
-        positions_sub = n.subscribe<geometry_msgs::PoseStamped>("r_ist", 1000, &ControlNode::poseCallback, this);
+        positions_sub = n.subscribe<geometry_msgs::PoseStamped>("r_ist", 100, &ControlNode::poseCallback, this);
+        // TODO to set the queue size reasonably
         // let the node publish the ros msg - corrected position - over topic "control_signal"
-        delta_positions_pub = n.advertise<geometry_msgs::PoseStamped>("control_signal", 1000);
+        delta_positions_pub = n.advertise<geometry_msgs::PoseStamped>("control_signal", 100);
     }
     // destructor
     ~ControlNode(){

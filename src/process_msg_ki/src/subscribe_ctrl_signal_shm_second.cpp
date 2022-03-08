@@ -6,6 +6,7 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <boost/interprocess/windows_shared_memory.hpp>
 #include <boost/interprocess/mapped_region.hpp>
+#include <boost/bind/bind.hpp>
 
 using namespace boost::interprocess;
 
@@ -17,8 +18,8 @@ using namespace boost::interprocess;
  * \param m_region reference to the mapped region in this process
  * \return None
  */
-void positionCallback(const geometry_msgs::PoseStamped::ConstPtr& ps3d, mapped_region& m_region){
-    ROS_INFO("Received position: X=%.2f, Y=%.2f, Z=%.2f; orientation quaternion: x=%.2f, y=%.2f, z=%.2f, w=%.2f",
+void positionCallback(const geometry_msgs::PoseStamped::ConstPtr& ps3d, const mapped_region& m_region){
+    ROS_INFO("Received corrected position: X=%.3f, Y=%.3f, Z=%.3f; orientation quaternion: x=%.3f, y=%.3f, z=%.3f, w=%.3f",
              ps3d->pose.position.x, ps3d->pose.position.y, ps3d->pose.position.z,
              ps3d->pose.orientation.x, ps3d->pose.orientation.y, ps3d->pose.orientation.z, ps3d->pose.orientation.w);
     // define and initiate rkorrs array
@@ -29,7 +30,9 @@ void positionCallback(const geometry_msgs::PoseStamped::ConstPtr& ps3d, mapped_r
     rkorrs[2] = ps3d->pose.position.z;
     // update the mapped region of this process with rkorrs (corrected positions)
     std::memcpy(m_region.get_address(), rkorrs, 3*sizeof(double));
+//    ROS_INFO("the first item of rkorrs is: %.3f", *(static_cast<double*>(m_region.get_address()))); // TODO to be removed
 }
+
 
 /*
  * \brief Dummy controller for receiving pose and sending control signal - corrected positions
@@ -51,11 +54,11 @@ int main(int argc, char **argv){
     ros::NodeHandle n;
     // TODO there may be problem in this std::bind w.r.t parameters, please first run and check it
     // create a function obj based on positionCallback, but with its arguments extended with mapped region
-    auto boundPositionCallback = std::bind(positionCallback, std::placeholders::_1, std::cref(region));
+    auto boundPositionCallback = boost::bind(positionCallback, boost::placeholders::_1, boost::ref(region));
     // TODO to set the queue size reasonably
     // let the node subscribe the ros msg - 3d pose without explicit rotation - over topic "control_signal"
     ros::Subscriber delta_positions_sub = n.subscribe<geometry_msgs::PoseStamped>("control_signal",
-                                                                  1000,
+                                                                  100,
                                                                   boundPositionCallback);
     /**
      * ros::spin() will enter a loop, pumping callbacks.  With this version, all

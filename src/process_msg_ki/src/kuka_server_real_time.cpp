@@ -102,17 +102,6 @@ int main(int argc, char *argv[]) {
      * or using complicated expressions). So you should try to avoid creating more *regex* objects than needed and using
      * a regular expression in a loop.
      */
-    // TODO the following pattern for R_Ist is to be used in processing message, not in server node
-    // define pattern and regular expression for finding R_Ist and capture the error of expression during running if any
-    std::string pattern_rist(R"((<RIst )([a-zA-Z0-9."= ]+)(/>))");
-    //std::string pattern_rkorr(R"((<RKorrY>)([0-9]+[.][0-9]+)(</RKorrY>)(<RKorrX>)([0-9]+[.][0-9]+)(</RKorrX>)(<RKorrZ>)([0-9]+[.][0-9]+)(</RKorrZ>))");
-    std::regex r_rist;
-    try{
-        r_rist.assign(pattern_rist, std::regex::icase);
-    } catch (std::regex_error& e) {
-        std::cout << "When using regular expression for finding R_Ist:\n" <<
-                  e.what() << "\ncode: " << e.code() << std::endl;
-    }
     // define pattern and regular expression for finding IPOC and capture the error of expression during running if any
     std::string pattern_ipoc("(<IPOC>)([[:digit:]]+)(</IPOC>)");
     std::regex r_ipoc;
@@ -209,9 +198,9 @@ int main(int argc, char *argv[]) {
 
     // Create a native windows shared memory object.
     //Note: No need to explicitly remove the share memory segments due to use of native windows shared memory mechanism
-    windows_shared_memory shm (create_only, "FirstSharedMemory", read_write, 4096);
+    printf("Parent process of first shared memory starts... \n");
+    windows_shared_memory shm(create_only, "FirstSharedMemory", read_write, 4096);
     // managed_shared_memory managed_shm{open_or_create, "shm", 1024};
-
     // Map the whole shared memory in this process
     mapped_region region(shm, read_write);
 
@@ -220,8 +209,8 @@ int main(int argc, char *argv[]) {
     // explicitly terminates. In addition, since this node subscribes to nothing, there is no need to apply spinning.
     while(true)
     {
-        printf("Waiting for data...");
-        fflush(stdout);
+//        printf("Waiting for data...");
+//        fflush(stdout);
 
         //clear the buffer by filling null, it might have previously received data
         memset(buf,'\0', BUFLEN);
@@ -235,10 +224,10 @@ int main(int argc, char *argv[]) {
 
         // start counting time when receiving msg from robot
         auto start = std::chrono::high_resolution_clock::now();
-        //print out details of the client/peer and the data received
-        buf[recv_len] = '\0';
-        printf("Received packet from %s:%d\n", inet_ntoa(si_other.sin_addr), ntohs(si_other.sin_port));
-        printf("Server receives:\n%s\n" , buf);
+//        //print out details of the client/peer and the data received
+//        buf[recv_len] = '\0';
+//        printf("Received packet from %s:%d\n", inet_ntoa(si_other.sin_addr), ntohs(si_other.sin_port));
+//        printf("Server receives:\n%s\n" , buf);
 
 
         /*
@@ -258,14 +247,43 @@ int main(int argc, char *argv[]) {
         // Task 2: Extract ipoc, combine it with control signal read in the second shared memory and send them back together
         // assign the prefix (fixed normally) of the xml message to be sent back to robot after processing
         std::string msg = R"(<?xml version="1.0"?><Sen Type="ImFree">)";
-        // TODO these three following vars are only used for testing, should be removed later and replaced with reading them from shared memory
-        float rkorrx = 0.999;
-        float rkorry = 0.998;
-        float rkorrz = 0.997;
-        // convert the control signal in float to string in order to be sent back
-        std::string rkorrx_str = std::to_string(rkorrx);
-        std::string rkorry_str = std::to_string(rkorry);
-        std::string rkorrz_str = std::to_string(rkorrz);
+//        // The following commented lines serves only for testing
+//        float rkorrx = 0.999;
+//        float rkorry = 0.998;
+//        float rkorrz = 0.997;
+//        // convert the control signal in float to string in order to be sent back
+//        msg_rkorrx_val = std::to_string(rkorrx);
+//        msg_rkorry_val = std::to_string(rkorry);
+//        msg_rkorrz_val = std::to_string(rkorrz);
+        // create an "empty" mapped region (Address will be 0 (nullptr). Size will be 0.) in this process
+        //mapped_region region_2;
+        // there should be no shared memory object named "SecondSharedMemory" at the beginning when running this process
+        try
+        {
+            // Open already created shared memory object.
+            printf("Child process of second shared memory starts... \n");
+            windows_shared_memory shm_2(open_only, "SecondSharedMemory", read_only);
+            // Map the whole shared memory in this process
+            mapped_region region_2(shm_2, read_only);
+            // Swap the region_2 with region_temp
+            //region_2.swap(region_temp);
+            // obtain the address of mapped region
+            // TODO the current code block below does not guarantee that the rkorrx, rkorry and rkorrz remain the last
+            //  values when the corresponding shm (created by another process) is closed. Instead it sets them again as zeros.
+            //  Please consult Niklas for its validity.
+            double *rkorr_pbeg = static_cast<double*>(region_2.get_address());
+            // convert the control signal in double to string without precision loss and then assign it to the predefined
+            // rkorr values (0.0, 0.0, 0.0)
+            // https://thispointer.com/convert-double-to-string-in-c-3-ways/
+            msg_rkorrx_val = std::to_string(*rkorr_pbeg);
+            msg_rkorry_val = std::to_string(*(rkorr_pbeg + 1));
+            msg_rkorrz_val = std::to_string(*(rkorr_pbeg + 2));
+            //printf("the rkorrs are: %.3f, %.3f, %.3f", *rkorr_pbeg, *(rkorr_pbeg + 1), *(rkorr_pbeg + 2));
+        }
+        catch (const interprocess_exception &ex) {  //std::exception
+            std::cout << "When opening the second windows_shared_memory ex: "  << ex.what()
+                      << "\ncode: " << ex.get_error_code() << "\n";
+        }
 
         // convert the buffer containing the char array of xml config to string and then parse it using regex
         std::string s_b(buf);
@@ -274,10 +292,6 @@ int main(int argc, char *argv[]) {
         std::smatch result_ipoc;
         // extract the ipoc from the given tags of the input sequence - xml message from robot
         extract_ipoc(s_b, r_ipoc, result_ipoc);
-        // replace the predefined korr values (0.0, 0.0, 0.0) with the received control signal
-        msg_rkorry_val = rkorry_str;
-        msg_rkorrx_val = rkorrx_str;
-        msg_rkorrz_val = rkorrz_str;
         // arrange the ipoc and control signal into the msg of regulated format
         msg.append(msg_rkorry_pre);
         msg.append(msg_rkorry_val);
@@ -290,7 +304,7 @@ int main(int argc, char *argv[]) {
         msg.append(msg_rkorrz_suf);
         msg.append(result_ipoc.str());
         msg.append(msg_suffix);
-        std::cout << msg << std::endl;
+//        std::cout << msg << std::endl;
 
         //now reply the client
         if (sendto(s, msg.c_str(), strlen(msg.c_str()),
@@ -299,7 +313,7 @@ int main(int argc, char *argv[]) {
             printf("sendto() failed with error code : %d" , WSAGetLastError());
             exit(EXIT_FAILURE);
         }
-        printf("\nMessage to robot is sent.\n");
+//        printf("\nMessage to robot is sent.\n");
 
 
         // stop counting time when sending msg back to robot
@@ -314,9 +328,9 @@ int main(int argc, char *argv[]) {
 //                  << duration_shm_write.count() << " milliseconds" << std::endl;
         /*
          * compute the time consumed for processing the robot message from reception to feedback which contains:
-         * 1. extracting ipoc, reading control signal from the second shared memory and then combining it with ipoc and
+         * 1. writing robot msg to the first shared memory
+         * 2. extracting ipoc, reading control signal from the second shared memory and then combining it with ipoc and
          * finally sending them back together
-         * 2. writing robot msg to the first shared memory
          */
         auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
         std::cout << "Time taken from server receiving msg to sending response: "
