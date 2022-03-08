@@ -1,79 +1,96 @@
 # Build interface
 ## Basic introduction
-This repo serves for setting up the interface between the kuka robot and data processor (PC-end). 
-In general, it consists of following work: 
-- UDP networking between Kuka robot and PC that processes the packet sent from Kuka robot is established. During processing,
-the packet containing the xml data would be parsed so that desired data is extracted and sent back to robot.
+This repo serves for setting up the interface between the Kuka robot and PC (input device). 
+In general, it consists of following works: 
+- UDP networking between Kuka robot and PC (input device) that processes the message sent from Kuka robot is established.
+- Then the message is stored in shared memory for efficient use by another process, which operates on the message to extract
+the actual robot pose and sends it to controller and Unity simulator.
+- Meanwhile, the same message is also processed in order to extract the ipoc part.
+- Then the received control signal from controller would be stored in another shared memory and then read from it so that
+the control signal would finally be combined with the extracted ipoc part and sent back to the robot together.
+
+To better understand this workflow, you can refer to [this schematic diagram](https://github.com/lenardxu/kuka_interface_ws/blob/main/docs/build_interface_flow_char.drawio.png) 
+or [the manual one](https://github.com/lenardxu/kuka_interface_ws/blob/main/docs/image_guideline_interface_building.jpg)
 
 
 ## Toolchain
 ### Windows
 > Toolset: Microsoft Visual Studio 2019
 > 
-> Build systems: CMake (version: 3.21.1)
+> Build systems: catkin
 > 
-> Make: mingw32-make.exe
-> 
-> Compilers: gcc and g++ (working version: 9.3.0) or GNU (working version: 11.2.0) ????????
-> 
-> Debugger: LLDB
-### Ubuntu (POSIX platform)
-> Toolset: 
->
-> Build systems: CMake (version: 3.21.1)
->
-> Make: mingw32-make.exe
->
-> Compilers: gcc and g++ (working version: 9.3.0) or GNU (working version: 11.2.0) ????????
->
 > Debugger: LLDB
 
 
 ## Essential libraries
 1. Boost
 > - Boost with version "1.73.0" (tested) or "1.75.0" (tested)
-2. XML parsing
-> - XercesC with version "3.2.3" (**Note**:To get the code to run in order, please use XercesC with version greater than 3.x)
+2. XML parsing lib
+> - XercesC with version "3.2.3" (**Note**:To get the code to run in order, please use XercesC with version greater than 3.x) (deactivated currently)
+> - Regex (STL library) (activated currently for its efficiency)
 3. ROS
 > - ROS Noetic Ninjemys
 
 
 ## Usage
-Pull from git repo:
-1. `git clone https://github.com/lenardxu/kuka_interface.git`
+### Build packages - Preparation for running ros nodes 
+1. Command `git clone https://github.com/lenardxu/kuka_interface_ws.git` to pull from git repo
+2. Command `cd kuka_interface_ws` to enter the workspace
+3. Command `catkin_make` under this workspace to build any catkin projects found in the "src" folder, which correspond to 
+   "process_msg_ki" in our case
+4. Command `catkin_make install` to copy only the exes to the "install" directory
+5. Source your new setup.bat file under the same workspace using: `devel\setup.bat` (Windows) instead of
+   `source devel/setup.bash` (Linux)
+6. Open a new terminal and command `roscore` in order for ROS nodes to communicate. [Helpful link to understand roscore](http://wiki.ros.org/roscore)
+### Running ros nodes
+Currently, two ways to run all essential ros nodes:
+1. Use Windows GUI
+   1. Navigate to "install" dir which was automatically created in the previous step when you commanded `catkin_make install`
+   2. Navigate to "lib/process_msg_ki" where all essential exes are placed
+   3. Double click "kuka_interface_server_node.exe" which will then wait for the incoming message from robot
+   4. Double click "process_robot_msg_node.exe" next
+   5. Double click "controller_node.exe" next
+   6. Double click "subscribe_ctrl_signal_node.exe" at last
+2. Use CLI
+   1. Command `rosrun process_msg_ki kuka_interface_server_node` under the same workspace in a new terminal
+      1. Note: this node is in charge of establishing the UDP networking, writing msg into shared memory, extracting IPOC, 
+      reading control signal from another shared memory and finally combining IPOC & control signal and sending them back 
+      together to the robot.
+   2. Command `rosrun process_msg_ki process_robot_msg_node` under the same workspace in a new terminal
+      1. Note: this node is in charge of decomposing the message into the desired actual robot pose and publishing it
+   3. Command `rosrun process_msg_ki controller_node` under the same workspace in a new terminal
+      1. Note: this node, as a dummy controller, is in charge of subscribing to the actual robot pose and publishing the 
+      control signal (corrected positions of robot) 
+   4. Command `rosrun process_msg_ki subscribe_ctrl_signal_node` under the same workspace in a new terminal
+      1. Note: this node is in charge of subscribing to the control signal and writing it into shared memory
+### Check the nodes' communications
+Open another new terminal, and command `rostopic list` to find the running `topic` specified by you in code, and then
+command `rostopic echo <your_topic>`
+
+Note: template command line for running ros node: `rosrun package node_name _param:=...`
+
+
+## Usage without using ROS w.r.t. some functionalties of this project
+1. Command `git clone https://github.com/lenardxu/kuka_interface.git` to pull from git repo
 2. Open this repo as a project with CLion; Configure the CMake and Toolchains of CLion so that the toolchain for building 
 this project is **Visual Studio** since the dependencies - Boost and Xerces C++ - are built using **Visual Studio**.
-3. `cd kuka_interface`
-4. `mkdir build`
-5. `cd build`
-6. `cmake ..` 
+2.`cd kuka_interface`
+3. `mkdir build`
+4. `cd build`
+5. `cmake ..` 
     
     or `cmake -G "Visual Studio 16 2019" ..` when visual studio is to be selected as compiler
 
     or `cmake -G "Visual Studio 16 2019" -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=<install path> ..` when the 
     program should be released and the install dir should be specified. Then don't forget to navigate to the dir of `<install path>`
-7. `cmake --build .`
-8. `./build_interface_server run` in one console under *./build/* directory when running on a POSIX platform;
+6. `cmake --build .`
+7. `./build_interface_server run` in one console under *./build/* directory when running on a POSIX platform;
 `.\build_interface_server run` in one console under *.\build\Debug* directory when running on a WINDOWS platform
 - **run** means non-debugging mode, while **debug** means debugging mode activated.
 9. `./build_interface_client` in one console under *build/* directory when running on a POSIX platform;
 `.\build_interface_client` in one console under *.\build\Debug* directory when running on a WINDOWS platform 
 (**Note**: this client is a simulated robot under testing.)
 
-### Build and run package(s) based on ROS1 on Windows
-- General process of build zero to many catkin packages in a workspace:
-  - Command `catkin_make` under your workspace in a terminal to build any catkin projects found in the "src" folder or 
-  `catkin_make --source my_src` to build them found based on source code in another place e.g. named as "my_src" 
-  - Command `catkin_make install` next or `catkin_make install --source my_src`
-- Source your new setup.bat file under the same workspace using: `devel\setup.bat` (Windows) instead of 
-`source devel/setup.bash` (Linux)
-- Open a new terminal and command `roscore` in order for ROS nodes to communicate. [Helpful link](http://wiki.ros.org/roscore)
-- Return to the previous terminal, and command `rosrun process_msg_ki generate_robot_msg_test` under the same workspace
-- Open another new terminal, and command `rosrun process_msg_ki process_robot_msg_node` under the same workspace
-- Open another new terminal, and command `rostopic list` to find the running `topic` specified by you in code, and then 
-command `rostopic echo <your_topic>`
-
-Note: template command line for running ros node: `rosrun package node_name _param:=...`
 
 ## Q&A
 > Why can't the compiler like Visual studio or gcc and c++ managed by MinGW find the "sys/socket.h" and other related 
@@ -81,6 +98,7 @@ Note: template command line for running ros node: `rosrun package node_name _par
 >>   Answer: Such header files are specific to POSIX platform, which are not supported by WINDOWS. As an alternative for
 networking programming on Windows, which is probably the only one, you may refer to WinSock (sockets api on windows), 
 which supports UDP ad TCP networking.
+
 
 ## Local network setup (for simulation of connection between robot and computer)
 In the mode of two-computer-ethernet-connection,
@@ -103,6 +121,7 @@ applied other than `server.sin_addr.s_addr = INADDR_ANY` for the server ip addre
 value of ip address to be in network-byte order, while **INADDR_ANY** is an unsigned long int in host byte order. As a 
 result, this constant needs to be explicitly converted by using the function **htonl**, which deals with 32-bit values 
 (**htons** handles 16-bit values).
+
 
 ## Others
 - Instead of manually making a build directory in th current directory, commanding `cmake -Bbuild -G "Visual Studio 16 2019" ..`
