@@ -27,6 +27,7 @@ configure_file (ProcessMsgKIConfig.h.in ${CMAKE_CURRENT_SOURCE_DIR}/include/Proc
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   std_msgs
+  geometry_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -135,7 +136,7 @@ message( STATUS "XercesC_FOUND: ${XercesC_FOUND}, XercesC_VERSION:${XercesC_VERS
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES process_msg_ki
-   CATKIN_DEPENDS roscpp std_msgs
+   CATKIN_DEPENDS roscpp std_msgs geometry_msgs
    DEPENDS Boost XercesC
 )
 
