@@ -47,18 +47,17 @@ message( STATUS
 #########################################################################################
 ## For catkin/CMakeLists.txt, the style of typing path should be consistent with Linux ##
 #########################################################################################
-#set ( XercesC_INCLUDE_DIR "D:\\SUMOLibraries-main\\xerces-c-3.2.3\\src" )
-#set ( XercesC_LIBRARY "D:\\SUMOLibraries-main\\xerces-c-3.2.3\\lib\\xerces-c_3.lib" )
-#set ( XercesC_VERSION "3.2.3" )
-set ( XercesC_INCLUDE_DIR "D:/SUMOLibraries-main/xerces-c-3.2.3/src" )
-set ( XercesC_LIBRARY "D:/SUMOLibraries-main/xerces-c-3.2.3/lib/xerces-c_3.lib" )
-find_package( XercesC REQUIRED )
-# Check the status after using find_package function
-message( STATUS "XercesC_FOUND: ${XercesC_FOUND}, XercesC_VERSION:${XercesC_VERSION},
-    XercesC_INCLUDE_DIRS:${XercesC_INCLUDE_DIRS},
-    XercesC_INCLUDE_DIR: ${XercesC_INCLUDE_DIR},
-    XercesC_LIBRARIES:${XercesC_LIBRARIES},
-    XercesC_LIBRARY: ${XercesC_LIBRARY}" )
+######################Correct configs for xerces c++#####################################
+#set ( XercesC_INCLUDE_DIR "D:/SUMOLibraries-main/xerces-c-3.2.3/src" )
+#set ( XercesC_LIBRARY "D:/SUMOLibraries-main/xerces-c-3.2.3/lib/xerces-c_3.lib" )
+#find_package( XercesC REQUIRED )
+## Check the status after using find_package function
+#message( STATUS "XercesC_FOUND: ${XercesC_FOUND}, XercesC_VERSION:${XercesC_VERSION},
+#    XercesC_INCLUDE_DIRS:${XercesC_INCLUDE_DIRS},
+#    XercesC_INCLUDE_DIR: ${XercesC_INCLUDE_DIR},
+#    XercesC_LIBRARIES:${XercesC_LIBRARIES},
+#    XercesC_LIBRARY: ${XercesC_LIBRARY}" )
+#########################################################################################
 
 
 ## Uncomment this if the package has a setup.py. This macro ensures
@@ -137,7 +136,7 @@ catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES process_msg_ki
    CATKIN_DEPENDS roscpp std_msgs geometry_msgs
-   DEPENDS Boost XercesC
+   DEPENDS Boost
 )
 
 ###########
