@@ -1,0 +1,6 @@
+<launch>
+    <node pkg="process_msg_ki" type="kuka_interface_server_node" name="kuka_interface_server_node" required="true" />
+    <node pkg="process_msg_ki" type="process_robot_msg_node" name="process_robot_msg_node" />
+    <node pkg="process_msg_ki" type="controller_node" name="controller_node" />
+    <node pkg="process_msg_ki" type="subscribe_ctrl_signal_node" name="subscribe_ctrl_signal_node" />
+</launch>

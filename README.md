@@ -43,15 +43,15 @@ or [the manual one](https://github.com/lenardxu/kuka_interface_ws/blob/main/docs
    `source devel/setup.bash` (Linux)
 6. Open a new terminal and command `roscore` in order for ROS nodes to communicate. [Helpful link to understand roscore](http://wiki.ros.org/roscore)
 ### Running ros nodes
-Currently, two ways to run all essential ros nodes:
-1. Use Windows GUI
+There are three ways to run all essential ros nodes:
+1. Use Windows GUI to start up nodes respectively
    1. Navigate to "install" dir which was automatically created in the previous step when you commanded `catkin_make install`
    2. Navigate to "lib/process_msg_ki" where all essential exes are placed
    3. Double click "kuka_interface_server_node.exe" which will then wait for the incoming message from robot
    4. Double click "process_robot_msg_node.exe" next
    5. Double click "controller_node.exe" next
    6. Double click "subscribe_ctrl_signal_node.exe" at last
-2. Use CLI
+2. Use `rosrun` to start up nodes respectively
    1. Command `rosrun process_msg_ki kuka_interface_server_node` under the same workspace in a new terminal
       1. Note: this node is in charge of establishing the UDP networking, writing msg into shared memory, extracting IPOC, 
       reading control signal from another shared memory and finally combining IPOC & control signal and sending them back 
@@ -63,11 +63,14 @@ Currently, two ways to run all essential ros nodes:
       control signal (corrected positions of robot) 
    4. Command `rosrun process_msg_ki subscribe_ctrl_signal_node` under the same workspace in a new terminal
       1. Note: this node is in charge of subscribing to the control signal and writing it into shared memory
+3. Use `roslaunch` to start up nodes collectively
+   1. Command `roslaunch process_msg_ki input_device.launch` to start up all essential nodes plus dummy controller (as 
+   testing node) (Note: `roslaunch` will also start `roscore` if no master has been set. )
 ### Check the nodes' communications
 Open another new terminal, and command `rostopic list` to find the running `topic` specified by you in code, and then
 command `rostopic echo <your_topic>`
 
-Note: template command line for running ros node: `rosrun package node_name _param:=...`
+Note: template command line for running ros node: `rosrun <package> <node_name> _param:=...`
 
 
 ## Usage without using ROS w.r.t. some functionalties of this project
