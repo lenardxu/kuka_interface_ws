@@ -51,6 +51,7 @@ There are three ways to run all essential ros nodes:
    4. Double click "process_robot_msg_node.exe" next
    5. Double click "controller_node.exe" next
    6. Double click "subscribe_ctrl_signal_node.exe" at last
+   7. Wait for robot sending messages
 2. Use `rosrun` to start up nodes respectively
    1. Command `rosrun process_msg_ki kuka_interface_server_node` under the same workspace in a new terminal
       1. Note: this node is in charge of establishing the UDP networking, writing msg into shared memory, extracting IPOC, 
@@ -63,9 +64,12 @@ There are three ways to run all essential ros nodes:
       control signal (corrected positions of robot) 
    4. Command `rosrun process_msg_ki subscribe_ctrl_signal_node` under the same workspace in a new terminal
       1. Note: this node is in charge of subscribing to the control signal and writing it into shared memory
+   5. Wait for robot sending messages
 3. Use `roslaunch` to start up nodes collectively
    1. Command `roslaunch process_msg_ki input_device.launch` to start up all essential nodes plus dummy controller (as 
    testing node) (Note: `roslaunch` will also start `roscore` if no master has been set. )
+   2. Wait for robot sending messages
+
 ### Check the nodes' communications
 Open another new terminal, and command `rostopic list` to find the running `topic` specified by you in code, and then
 command `rostopic echo <your_topic>`
