@@ -25,6 +25,8 @@
  * --> synchronization objects in question: mutex, condition variables, semaphores and file locks
  *     --> respective occasions of applying the first three synchronization objects:
  *         https://stackoverflow.com/questions/3513045/conditional-variable-vs-semaphore
+ * Use managed_shared_memory to access shared memory and construct vector (as an example):
+ * https://stackoverflow.com/questions/64204744/c-server-client-boostinterprocess-array-access-in-shared-memory
  */
 
 
@@ -203,6 +205,8 @@ int main(int argc, char *argv[]) {
     // managed_shared_memory managed_shm{open_or_create, "shm", 1024};
     // Map the whole shared memory in this process
     mapped_region region(shm, read_write);
+    printf("Waiting for data...");
+    fflush(stdout);
 
 
     // Keep listening for incoming data from robot and operating on them until robot stops sending msg or server itself

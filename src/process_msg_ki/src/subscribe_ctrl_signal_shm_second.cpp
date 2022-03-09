@@ -1,6 +1,11 @@
 //
 // Created by Lenovo on 2/16/2022.
 //
+/*
+ * Helpful guide for using boost::bind to pass multiple arguments to subscriber callback function
+ * --> Official instruction on boost::bind: https://www.boost.org/doc/libs/1_78_0/libs/bind/doc/html/bind.html#bind.examples.using_bind_with_standard_algorit
+ * --> Useful post: https://answers.ros.org/question/11810/how-to-pass-arguments-tofrom-subscriber-callback-functions/
+ */
 
 #include "ros/ros.h"
 #include <geometry_msgs/PoseStamped.h>
