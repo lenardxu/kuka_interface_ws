@@ -112,7 +112,6 @@ int main(int argc, char *argv[])
         char *mem = static_cast<char*>(region.get_address());
         //printf("the msg wrote in shared memory can be read as:\n");
         //puts(mem);
-        ROS_INFO("the msg wrote in shared memory can be read as:\n%s", mem);
 //        // check the shared memory object read from mapped region
 //        char *mem_copy;
 //        int size_check = 0;
@@ -124,13 +123,15 @@ int main(int argc, char *argv[])
 //            return 1;   //Error checking memory
 //        printf("shm test succeeded");
 
-        // convert the buffer containing the char array of xml config to string and then parse it using xercesc
-        std::string s_b(mem);
-        // declare the result for ipoc after using regex_search method later
-        std::smatch result_rist;
-        // extract the ipoc from the given tags of the input sequence - xml message from robot
-        extract_rist(s_b, r_rist, result_rist);
-        // declare the ros msg of format std_msgs::Float32MultiArray to be sent to the controller
+        if ( *mem != '\0' ) {
+            ROS_INFO("the msg wrote in shared memory can be read as:\n%s", mem);
+            // convert the buffer containing the char array of xml config to string and then parse it using xercesc
+            std::string s_b(mem);
+            // declare the result for ipoc after using regex_search method later
+            std::smatch result_rist;
+            // extract the ipoc from the given tags of the input sequence - xml message from robot
+            extract_rist(s_b, r_rist, result_rist);
+            // declare the ros msg of format std_msgs::Float32MultiArray to be sent to the controller
 //        std_msgs::Float32MultiArray msg;
 //        unsigned int target_id_arr[] = {3,5,7,9,11,13};
 //        for ( auto id : target_id_arr ){
@@ -140,31 +141,35 @@ int main(int argc, char *argv[])
 //        ROS_INFO("position: X=%.2f, Y=%.2f, Z=%.2f; orientation: A=%.2f, B=%.2f, C=%.2f",
 //                 msg.data[0], msg.data[1], msg.data[2], msg.data[3], msg.data[4], msg.data[5]);
 
-        // declare the full 3d pose ros msg to be sent to the controller
-        geometry_msgs::PoseStamped msg;
-        // assign the extracted r_ist values to position and orientation quaternions
-        msg.pose.position.x = std::stod(result_rist[3].str());
-        msg.pose.position.y = std::stod(result_rist[5].str());
-        msg.pose.position.z = std::stod(result_rist[7].str());
-        msg.pose.orientation = createQuaternionFromRPY(std::stod(result_rist[9].str()),
-                                                          std::stod(result_rist[11].str()),
-                                                          std::stod(result_rist[13].str()));
-        // TODO check whether A=roll angle, B=pitch angle, C=yaw angle?
-        auto stop = std::chrono::high_resolution_clock::now();
-        // TODO to check whether the resulting time cost is zero millisecond and why if so
-        auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
-        ROS_INFO("position: X=%.2f, Y=%.2f, Z=%.2f; orientation: A=%.2f, B=%.2f, C=%.2f",
-                 std::stod(result_rist[3].str()), std::stod(result_rist[5].str()), std::stod(result_rist[7].str()),
-                 std::stod(result_rist[9].str()), std::stod(result_rist[11].str()), std::stod(result_rist[13].str()));
-        ROS_INFO("xml message decomposed.\nAnd time takes: %.2f milliseconds", duration.count());
-        ROS_INFO("position: X=%.2f, Y=%.2f, Z=%.2f; orientation quaternion: x=%.2f, y=%.2f, z=%.2f, w=%.2f",
-                 msg.pose.position.x, msg.pose.position.y, msg.pose.position.z,
-                 msg.pose.orientation.x, msg.pose.orientation.y, msg.pose.orientation.z, msg.pose.orientation.w);
-        // publish the full 3d pose ros msg
-        pose_pub.publish(msg);
-        // this spinning is removable since the corresponding node subscribes to nothing
-        ros::spinOnce();
-        loop_rate.sleep();
+            // declare the full 3d pose ros msg to be sent to the controller
+            geometry_msgs::PoseStamped msg;
+            // assign the extracted r_ist values to position and orientation quaternions
+            msg.pose.position.x = std::stod(result_rist[3].str());
+            msg.pose.position.y = std::stod(result_rist[5].str());
+            msg.pose.position.z = std::stod(result_rist[7].str());
+            msg.pose.orientation = createQuaternionFromRPY(std::stod(result_rist[9].str()),
+                                                           std::stod(result_rist[11].str()),
+                                                           std::stod(result_rist[13].str()));
+            // TODO check whether A=roll angle, B=pitch angle, C=yaw angle?
+            auto stop = std::chrono::high_resolution_clock::now();
+            // TODO to check whether the resulting time cost is zero millisecond and why if so
+            auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
+            ROS_INFO("position: X=%.2f, Y=%.2f, Z=%.2f; orientation: A=%.2f, B=%.2f, C=%.2f",
+                     std::stod(result_rist[3].str()), std::stod(result_rist[5].str()), std::stod(result_rist[7].str()),
+                     std::stod(result_rist[9].str()), std::stod(result_rist[11].str()), std::stod(result_rist[13].str()));
+            ROS_INFO("xml message decomposed.\nAnd time takes: %.2f milliseconds", duration.count());
+            ROS_INFO("position: X=%.2f, Y=%.2f, Z=%.2f; orientation quaternion: x=%.2f, y=%.2f, z=%.2f, w=%.2f",
+                     msg.pose.position.x, msg.pose.position.y, msg.pose.position.z,
+                     msg.pose.orientation.x, msg.pose.orientation.y, msg.pose.orientation.z, msg.pose.orientation.w);
+            // publish the full 3d pose ros msg
+            pose_pub.publish(msg);
+            // this spinning is removable since the corresponding node subscribes to nothing
+            ros::spinOnce();
+            loop_rate.sleep();
+        } else {
+            ROS_INFO("waiting for msg in shared memory...");
+            loop_rate.sleep();
+        }
     }
 
     return 0;
