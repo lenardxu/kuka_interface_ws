@@ -64,9 +64,9 @@ using namespace boost::interprocess;
  */
 void extract_ipoc(const std::string& input,
                   const std::regex& r_ipoc, std::smatch& result_ipoc){
-    if (std::regex_search(input, result_ipoc, r_ipoc))
-        std::cout << "Text for IPOC:\n" << result_ipoc.str() << "\n";
-    std::cout << std::endl;
+    if (std::regex_search(input, result_ipoc, r_ipoc)){
+        //std::cout << "Text for IPOC:\n" << result_ipoc.str() << std::endl;
+    }
 }
 
 
