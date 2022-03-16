@@ -91,11 +91,9 @@ int main(int argc, char *argv[]) {
     if (nh.getParam("param", param))
         ROS_INFO("Got parameter : %s", param.c_str());
     else
-        // TODO to change to "external" when connecting with robot in the following line (this serves for launching
-        //  node one by one) and launch file (this serves for launching nodes collectively)
         param = "external";
 
-    //TODO for testing the time cost of extracting ipoc, writing msg into shm and inserting control signal for msg return
+    //TODO for testing the time cost from receiving msg from robot to sending necessary info back, can be removed later
     unsigned round = 0;
     float time_consumed = 0.0;
 
@@ -283,9 +281,6 @@ int main(int argc, char *argv[]) {
             // Swap the region_2 with region_temp
             //region_2.swap(region_temp);
             // obtain the address of mapped region
-            // TODO the current code block below does not guarantee that the rkorrx, rkorry and rkorrz remain the last
-            //  values when the corresponding shm (created by another process) is closed. Instead it sets them again as zeros.
-            //  Please consult Niklas for its validity.
             double *rkorr_pbeg = static_cast<double*>(region_2.get_address());
             // convert the control signal in double to string without precision loss and then assign it to the predefined
             // rkorr values (0.0, 0.0, 0.0)

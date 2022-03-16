@@ -152,7 +152,6 @@ int main(int argc, char *argv[])
                                                            std::stod(result_rist[13].str()));
             // TODO check whether A=roll angle, B=pitch angle, C=yaw angle?
             auto stop = std::chrono::high_resolution_clock::now();
-            // TODO to check whether the resulting time cost is zero millisecond and why if so
             auto duration = std::chrono::duration_cast<std::chrono::milliseconds>(stop - start);
             ROS_INFO("position: X=%.2f, Y=%.2f, Z=%.2f; orientation: A=%.2f, B=%.2f, C=%.2f",
                      std::stod(result_rist[3].str()), std::stod(result_rist[5].str()), std::stod(result_rist[7].str()),

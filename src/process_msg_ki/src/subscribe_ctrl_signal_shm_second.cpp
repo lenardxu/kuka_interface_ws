@@ -57,7 +57,6 @@ int main(int argc, char **argv){
     ros::init(argc, argv, "subscribe_ctrl_signal_node");
     // create a handle to this process's node
     ros::NodeHandle n;
-    // TODO there may be problem in this std::bind w.r.t parameters, please first run and check it
     // create a function obj based on positionCallback, but with its arguments extended with mapped region
     auto boundPositionCallback = boost::bind(positionCallback, boost::placeholders::_1, boost::ref(region));
     // TODO to set the queue size reasonably
