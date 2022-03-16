@@ -24,10 +24,10 @@ or [the manual one](https://github.com/lenardxu/kuka_interface_ws/blob/main/docs
 
 ## Essential libraries
 1. Boost
-> - Boost with version "1.73.0" (tested) or "1.75.0" (tested)
+> - Boost with from version "1.73.0" onwards (tested)
 2. XML parsing lib
 > - XercesC with version "3.2.3" (**Note**:To get the code to run in order, please use XercesC with version greater than 3.x) (deactivated currently)
-> - Regex (STL library) (activated currently for its efficiency)
+> - Regex (STL library) (activated currently for its real-time performance)
 3. ROS
 > - ROS Noetic Ninjemys
 
@@ -70,11 +70,17 @@ There are three ways to run all essential ros nodes:
    testing node) (Note: `roslaunch` will also start `roscore` if no master has been set. )
    2. Wait for robot sending messages
 
-### Check the nodes' communications
-Open another new terminal, and command `rostopic list` to find the running `topic` specified by you in code, and then
-command `rostopic echo <your_topic>`
+>**Note**: Currently the **external connection** with robot by udp networking is activated no matter when launching node
+> separately or launching node collectively. To test it on your laptop or similar, which means **internal connection**, 
+> please alter two places: 
+> 1. "kuka_server_real_time.cpp": (Line 94) from `param = "external";` to `param = "local";`
+> 2. "input_device.launch": (Line 3) from `<param name="param" value="external" />` to `<param name="param" value="local" />`
 
-Note: template command line for running ros node: `rosrun <package> <node_name> _param:=...`
+**Tip**: template command line for running a separate ROS node with ROS parameter: `rosrun <package> <node_name> _param:=...`
+### Check the ROS nodes' communications
+Open another new terminal, and command `rostopic list` to find the running `topic` specified by you in code, and then
+command `rostopic echo <your_topic>` to display Messages published to `<your_topic>`. Or command `rostopic hz <your_topic>`
+to display the frequency of publishing Messages.
 
 
 ## Usage without using ROS w.r.t. some functionalties of this project
@@ -133,8 +139,6 @@ result, this constant needs to be explicitly converted by using the function **h
 ## Others
 - Instead of manually making a build directory in th current directory, commanding `cmake -Bbuild -G "Visual Studio 16 2019" ..`
 is also an option for this purpose.
-
-### About Shared Memory
 
 ### Clion and ROS
 - Please refer to [this link](https://www.jetbrains.com/help/clion/ros-setup-tutorial.html) to check how to setup ROS
