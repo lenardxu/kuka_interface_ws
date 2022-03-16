@@ -27,9 +27,9 @@ class ControlNode
                  ps3d->pose.position.x, ps3d->pose.position.y, ps3d->pose.position.z,
                  ps3d->pose.orientation.x, ps3d->pose.orientation.y, ps3d->pose.orientation.z, ps3d->pose.orientation.w);
         // assign dummy values to the corrected positions
-        output_msg.pose.position.x = 0.001;
-        output_msg.pose.position.y = 0.002;
-        output_msg.pose.position.z = 0.003;
+        output_msg.pose.position.x = 0.000;
+        output_msg.pose.position.y = 0.00001;
+        output_msg.pose.position.z = 0.000000;
         delta_positions_pub.publish(output_msg);
     }
 

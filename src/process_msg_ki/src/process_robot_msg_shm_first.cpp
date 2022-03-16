@@ -101,7 +101,7 @@ int main(int argc, char *argv[])
 
     // specify a frequency that you would like to loop at, i.e., 0.5[hz]
     //TODO to set the loop rate reasonably
-    ros::Rate loop_rate(0.5);
+    ros::Rate loop_rate(5);
 
     // By default roscpp will install a SIGINT handler which provides Ctrl-C handling which will cause ros::ok() to
     // return false if that happens.
