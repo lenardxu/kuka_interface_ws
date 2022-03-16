@@ -86,9 +86,14 @@ int main(int argc, char *argv[]) {
     ros::init(argc, argv, "kuka_interface_server_node");
     // create a handle to this process' node - "~" is needed for fetching ros parameters
     ros::NodeHandle nh("~");
-    // fetch the value of param existing in the command line and assign it to var param
-    nh.getParam("param", param);
-    ROS_INFO("Got parameter : %s", param.c_str());
+    // fetch the value of ros parameter defined in launch file and assign it to var param,
+    // otherwise set var param to "local" as default for local testing purpose
+    if (nh.getParam("param", param))
+        ROS_INFO("Got parameter : %s", param.c_str());
+    else
+        // TODO to change to "external" when connecting with robot in the following line (this serves for launching
+        //  node one by one) and launch file (this serves for launching nodes collectively)
+        param = "external";
 
     //TODO for testing the time cost of extracting ipoc, writing msg into shm and inserting control signal for msg return
     unsigned round = 0;
@@ -179,9 +184,15 @@ int main(int argc, char *argv[]) {
      * - assign a specific port number (network byte order) to sin_port
      */
     server.sin_family = AF_INET;
-    //server.sin_addr.s_addr = inet_addr(HOST);  // an alternative way of defining s_addr for external connection
-    //server.sin_addr.s_addr = htonl(INADDR_ANY);
-    server.sin_addr.s_addr = inet_addr(LOCALHOST);  // way of defining s_addr for internal connection (localhost)
+    // compare the predefined ros parameter in the launch file with "external" / "local" to activate different mode of
+    // udp network
+    if(param.compare("external") == 0) {
+        server.sin_addr.s_addr = inet_addr(HOST);
+        //server.sin_addr.s_addr = htonl(INADDR_ANY); // an alternative way of defining s_addr for external connection
+    }
+    else if(param.compare("local") == 0) {
+        server.sin_addr.s_addr = inet_addr(LOCALHOST); // way of defining s_addr for internal connection (localhost)
+    }
     server.sin_port = htons(PORT);
 
     /* Bind the socket with the server address and use its returned value for checking error
