@@ -10,7 +10,16 @@ the actual robot pose and sends it to controller and Unity simulator.
 the control signal would finally be combined with the extracted ipoc part and sent back to the robot together.
 
 To better understand this workflow, you can refer to [this schematic diagram](https://github.com/lenardxu/kuka_interface_ws/blob/main/docs/build_interface_flow_char.drawio.png) 
-or [the manual one](https://github.com/lenardxu/kuka_interface_ws/blob/main/docs/image_guideline_interface_building.jpg)
+or [the manual one](https://github.com/lenardxu/kuka_interface_ws/blob/main/docs/image_guideline_interface_building.jpg).
+
+### Source Files in Service
+| Executables | Source files | Description |
+| ----------- | ------------ | ------------|
+| `kuka_interface_server_node` | kuka_server_real_time.cpp | Transmit raw data (incl. robot pose) from Kuka robot to PC (input device) and then processed data (incl. control signal) from PC (input device) back to Kuka robot based on UDP networking
+| `process_robot_msg_node` | process_robot_msg_shm_first.cpp | Read messages in the first shared memory created in `kuka_interface_server_node` and extract robot pose part for sending to controller and Unity simulator
+| `controller_node` | dummy_controller.cpp | Set up a dummy controller to subscribe to robot pose and publish dummy control signal
+| `subscribe_ctrl_signal_node` | subscribe_ctrl_signla_shm_second.cpp | Receive control signal and write it to the second shared memory
+
 
 
 ## Toolchain
